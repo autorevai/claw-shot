@@ -1,0 +1,99 @@
+{
+  "name": "claude-shot",
+  "displayName": "Claude Shot",
+  "description": "One keystroke: capture a macOS screenshot straight into Claude Code's terminal prompt. No drag-drop, no clipboard juggling.",
+  "version": "0.1.0",
+  "publisher": "chrisdiyanni",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "claude",
+    "claude code",
+    "screenshot",
+    "screencapture",
+    "terminal",
+    "vision"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chrisdiyanni/claude-shot"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "claudeShot.capture",
+        "title": "Claude Shot: Capture Region into Claude Code",
+        "category": "Claude Shot"
+      },
+      {
+        "command": "claudeShot.captureFullscreen",
+        "title": "Claude Shot: Capture Full Screen into Claude Code",
+        "category": "Claude Shot"
+      },
+      {
+        "command": "claudeShot.captureWindow",
+        "title": "Claude Shot: Capture Window into Claude Code",
+        "category": "Claude Shot"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "claudeShot.capture",
+        "key": "cmd+alt+4",
+        "mac": "cmd+alt+4"
+      },
+      {
+        "command": "claudeShot.captureFullscreen",
+        "key": "cmd+alt+3",
+        "mac": "cmd+alt+3"
+      },
+      {
+        "command": "claudeShot.captureWindow",
+        "key": "cmd+alt+5",
+        "mac": "cmd+alt+5"
+      }
+    ],
+    "configuration": {
+      "title": "Claude Shot",
+      "properties": {
+        "claudeShot.saveDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "Directory to save screenshots in. Leave empty to use the OS temp directory. Supports ~ for home."
+        },
+        "claudeShot.targetTerminalName": {
+          "type": "string",
+          "default": "",
+          "description": "Only send to a terminal whose name contains this string (case-insensitive). Leave empty to use the active terminal."
+        },
+        "claudeShot.focusTerminalAfterCapture": {
+          "type": "boolean",
+          "default": true,
+          "description": "Reveal and focus the target terminal after capture so you can type your prompt immediately."
+        },
+        "claudeShot.keepFiles": {
+          "type": "boolean",
+          "default": false,
+          "description": "Keep screenshot files after the session. When false, files older than 24h in the save directory are pruned on startup."
+        },
+        "claudeShot.playSound": {
+          "type": "boolean",
+          "default": true,
+          "description": "Play the macOS screenshot shutter sound on capture."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "npx --yes @vscode/vsce package --no-dependencies"
+  }
+}
