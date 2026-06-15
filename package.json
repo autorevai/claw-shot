@@ -1,7 +1,7 @@
 {
-  "name": "claude-shot",
-  "displayName": "Claude Shot",
-  "description": "One keystroke: capture a macOS screenshot straight into Claude Code's terminal prompt. No drag-drop, no clipboard juggling.",
+  "name": "claw-shot",
+  "displayName": "Claw Shot",
+  "description": "Screenshots straight into Claude Code. In-app capture shortcuts plus a watch mode that auto-injects native Cmd+Shift+3/4 screenshots from any app. No drag-drop.",
   "version": "0.1.0",
   "publisher": "chrisdiyanni",
   "license": "MIT",
@@ -12,16 +12,16 @@
     "Other"
   ],
   "keywords": [
-    "claude",
     "claude code",
     "screenshot",
     "screencapture",
     "terminal",
-    "vision"
+    "vision",
+    "ai"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/chrisdiyanni/claude-shot"
+    "url": "https://github.com/autorevai/claw-shot"
   },
   "activationEvents": [
     "onStartupFinished"
@@ -30,65 +30,85 @@
   "contributes": {
     "commands": [
       {
-        "command": "claudeShot.capture",
-        "title": "Claude Shot: Capture Region into Claude Code",
-        "category": "Claude Shot"
+        "command": "clawShot.capture",
+        "title": "Capture Region into Claude Code",
+        "category": "Claw Shot"
       },
       {
-        "command": "claudeShot.captureFullscreen",
-        "title": "Claude Shot: Capture Full Screen into Claude Code",
-        "category": "Claude Shot"
+        "command": "clawShot.captureFullscreen",
+        "title": "Capture Full Screen into Claude Code",
+        "category": "Claw Shot"
       },
       {
-        "command": "claudeShot.captureWindow",
-        "title": "Claude Shot: Capture Window into Claude Code",
-        "category": "Claude Shot"
+        "command": "clawShot.captureWindow",
+        "title": "Capture Window into Claude Code",
+        "category": "Claw Shot"
+      },
+      {
+        "command": "clawShot.toggleWatch",
+        "title": "Toggle Watch Mode (auto-inject screenshots from any app)",
+        "category": "Claw Shot"
       }
     ],
     "keybindings": [
       {
-        "command": "claudeShot.capture",
+        "command": "clawShot.capture",
         "key": "cmd+alt+4",
         "mac": "cmd+alt+4"
       },
       {
-        "command": "claudeShot.captureFullscreen",
+        "command": "clawShot.captureFullscreen",
         "key": "cmd+alt+3",
         "mac": "cmd+alt+3"
       },
       {
-        "command": "claudeShot.captureWindow",
+        "command": "clawShot.captureWindow",
         "key": "cmd+alt+5",
         "mac": "cmd+alt+5"
+      },
+      {
+        "command": "clawShot.toggleWatch",
+        "key": "cmd+alt+0",
+        "mac": "cmd+alt+0"
       }
     ],
     "configuration": {
-      "title": "Claude Shot",
+      "title": "Claw Shot",
       "properties": {
-        "claudeShot.saveDirectory": {
-          "type": "string",
-          "default": "",
-          "description": "Directory to save screenshots in. Leave empty to use the OS temp directory. Supports ~ for home."
-        },
-        "claudeShot.targetTerminalName": {
-          "type": "string",
-          "default": "",
-          "description": "Only send to a terminal whose name contains this string (case-insensitive). Leave empty to use the active terminal."
-        },
-        "claudeShot.focusTerminalAfterCapture": {
+        "clawShot.watchOnStartup": {
           "type": "boolean",
           "default": true,
-          "description": "Reveal and focus the target terminal after capture so you can type your prompt immediately."
+          "description": "Start in watch mode: auto-inject any screenshot saved to the macOS screenshot folder (native Cmd+Shift+3/4), from any app, even while VS Code is in the background. Toggle anytime with Cmd+Option+0 or the status-bar button."
         },
-        "claudeShot.keepFiles": {
+        "clawShot.screenshotDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "Folder to watch for screenshots in watch mode. Leave empty to auto-detect the macOS screenshot location (defaults to ~/Desktop). Supports ~."
+        },
+        "clawShot.saveDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "Directory for in-app (Cmd+Option) captures. Leave empty to use the OS temp directory. Supports ~."
+        },
+        "clawShot.targetTerminalName": {
+          "type": "string",
+          "default": "",
+          "description": "Only send to a terminal whose name contains this string (case-insensitive). Leave empty to use the active terminal. Tip: rename your Claude terminal to 'claude' and set this to 'claude'."
+        },
+        "clawShot.focusTerminalAfterCapture": {
+          "type": "boolean",
+          "default": true,
+          "description": "Reveal and focus the target terminal after an in-app capture so you can type your prompt immediately."
+        },
+        "clawShot.keepFiles": {
           "type": "boolean",
           "default": false,
-          "description": "Keep screenshot files after the session. When false, files older than 24h in the save directory are pruned on startup."
+          "description": "Keep in-app capture files. When false, Claw Shot's own files older than 24h are pruned on startup. (Watch mode never deletes your native screenshots.)"
         },
-        "claudeShot.playSound": {
+        "clawShot.playSound": {
           "type": "boolean",
           "default": true,
-          "description": "Play the macOS screenshot shutter sound on capture."
+          "description": "Play the macOS screenshot shutter sound on in-app captures."
         }
       }
     }

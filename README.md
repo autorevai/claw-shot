@@ -1,55 +1,69 @@
-# Claude Shot
+# Claw Shot
 
-One keystroke: capture a macOS screenshot straight into Claude Code's terminal prompt. No drag-drop, no Preview, no clipboard juggling.
+Screenshots straight into Claude Code. Take a screenshot from any app and it lands in your Claude Code terminal automatically. No drag-drop, no Preview, no Finder.
 
-Built because dragging screenshots into Claude Code one file at a time is a caveman move.
+Built because feeding screenshots to Claude Code one drag at a time is a caveman move.
 
-## What it does
+## The main way: watch mode (works from any app)
 
-Press a shortcut → take a screenshot (region / full screen / window) → the file path is inserted into your active terminal where Claude Code is running. Claude Code treats a typed image path exactly like a dropped image and attaches it as `[Image #N]`.
+Watch mode is on by default. With VS Code open (it can be in the background, you don't have to focus it):
 
-Fire it four times → four images stack on the same prompt line → type your question → Enter. That's it.
+1. Take a screenshot from **anywhere** with the native macOS shortcut: `Cmd+Shift+4` (region) or `Cmd+Shift+3` (full screen). These are global and work in Chrome, Figma, anywhere.
+2. Claw Shot sees the new screenshot and injects its path into your Claude Code terminal.
+3. Type your question, hit Enter. Claude reads the image.
 
-| Shortcut | Action | Mirrors |
-|----------|--------|---------|
-| `Cmd+Alt+4` | Capture a region (click-drag) | macOS `Cmd+Shift+4` |
-| `Cmd+Alt+3` | Capture full screen | macOS `Cmd+Shift+3` |
-| `Cmd+Alt+5` | Capture a window | macOS `Cmd+Shift+4` then Space |
+That's it. The native screenshot shortcuts you already use just start flowing into Claude Code.
 
-There's also a `$(device-camera) Shot` button in the status bar (region capture).
+Toggle watch mode with **`Cmd+Option+0`** or the status-bar button (`$(eye)` = watching, `$(camera)` = off).
 
-## Why file-path instead of clipboard
+> **VS Code must be running** (background is fine) because your Claude terminal lives inside it. If it's quit, there's no terminal to receive the shot.
 
-`terminal.sendText(path)` is 100% deterministic. Auto-pasting raw clipboard *image* data into the terminal TUI is not something a VS Code extension can do reliably (the paste command sends text, not image bytes). Inserting the saved file path mirrors a drag-and-drop, which Claude Code natively turns into an image attachment.
+## The other way: in-app capture shortcuts
 
-> Heads up: the path is sent without a trailing newline so captures accumulate. **You** press Enter when you've added all the shots and typed your prompt.
+When VS Code *is* focused, you can capture without leaving it:
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+Option+4` | Region |
+| `Cmd+Option+3` | Full screen |
+| `Cmd+Option+5` | Window |
+| `Cmd+Option+0` | Toggle watch mode |
+
+(These use `Option` instead of `Shift` so they don't collide with the native macOS screenshots. They only fire while VS Code is the focused app, which is why watch mode exists for everything else.)
+
+## Targeting the right terminal
+
+By default the path goes to your active (last-focused) terminal. With many terminals open, pin it:
+
+1. Right-click your Claude terminal tab → **Rename** → call it `claude`
+2. Set `clawShot.targetTerminalName` to `claude`
+
+Now every shot routes there regardless of focus.
 
 ## Install
 
 ```bash
-npm run package           # produces claude-shot-<version>.vsix
-code --install-extension claude-shot-*.vsix
+npm run package           # produces claw-shot-<version>.vsix
+code --install-extension claw-shot-*.vsix
 ```
 
-Then reload VS Code (`Cmd+Shift+P` → "Reload Window").
-
-## macOS permission
-
-The first capture may prompt for **Screen Recording** permission for VS Code (System Settings → Privacy & Security → Screen Recording). Grant it and restart VS Code. Region/window selection generally works without it; full-screen capture of other apps needs it.
+Reload VS Code (`Cmd+Shift+P` → "Reload Window"). Grant **Screen Recording** permission to VS Code on first in-app capture (System Settings → Privacy & Security → Screen Recording). Watch mode doesn't need that permission, since macOS itself takes the screenshot.
 
 ## Settings
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `claudeShot.saveDirectory` | `""` (OS temp) | Where PNGs are saved. Supports `~`. |
-| `claudeShot.targetTerminalName` | `""` (active) | Only send to a terminal whose name contains this string. Set to `claude` if you keep a dedicated terminal. |
-| `claudeShot.focusTerminalAfterCapture` | `true` | Reveal + focus the terminal after capture. |
-| `claudeShot.keepFiles` | `false` | Keep PNGs. When false, files >24h old are pruned on startup. |
-| `claudeShot.playSound` | `true` | Play the macOS shutter sound. |
+| `clawShot.watchOnStartup` | `true` | Auto-inject screenshots from the macOS screenshot folder on startup. |
+| `clawShot.screenshotDirectory` | `""` (auto) | Folder to watch. Empty = auto-detect the macOS screenshot location. Supports `~`. |
+| `clawShot.targetTerminalName` | `""` (active) | Only send to a terminal whose name contains this string. |
+| `clawShot.saveDirectory` | `""` (temp) | Where in-app `Cmd+Option` captures are saved. |
+| `clawShot.focusTerminalAfterCapture` | `true` | Focus the terminal after an in-app capture. |
+| `clawShot.keepFiles` | `false` | Keep in-app capture files (>24h old are pruned otherwise). Never touches your native screenshots. |
+| `clawShot.playSound` | `true` | Shutter sound on in-app captures. |
 
-## The zero-install alternative
+## How it works
 
-You don't strictly need this extension. macOS `Cmd+Ctrl+Shift+4` captures a region straight to the clipboard, and Claude Code's terminal accepts **`Ctrl+V`** (control, not command) to paste a clipboard image as an attachment. This extension just compresses that into one keystroke, adds a status-bar button, and lets multiple shots accumulate.
+Claw Shot inserts the screenshot's **file path** into the terminal via `terminal.sendText`. Claude Code reads that path as an image. This is deterministic, unlike auto-pasting raw clipboard image bytes (which a VS Code extension can't reliably do). Watch mode uses `fs.watch` on the macOS screenshot folder; in-app capture shells out to `screencapture`.
 
 ## License
 
