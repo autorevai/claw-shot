@@ -28,6 +28,16 @@ let watchEnabled = false;
 let watchDir = '';
 const injected = new Set(); // de-dupe filenames (fs.watch can fire twice per file)
 
+// Multi-window coordination: every VS Code window runs its own extension host (with a unique
+// process.pid). Without this, each open window would inject the same screenshot. Each watching
+// window writes a heartbeat + last-focused timestamp to a shared temp dir, and only the
+// most-recently-focused live window injects a given screenshot.
+const WIN_ID = String(process.pid);
+const COORD_DIR = path.join(os.tmpdir(), 'claw-shot', 'windows');
+const WINDOW_TTL_MS = 15000; // a window file not refreshed within this window is treated as dead
+let heartbeatTimer = null;
+let focusDisposable = null;
+
 function log(msg) {
   if (output) output.appendLine(`[${new Date().toISOString()}] ${msg}`);
 }
@@ -169,6 +179,67 @@ function macScreenshotConfig() {
   return { dir, prefix };
 }
 
+// ---- Multi-window leader election ----
+
+// Record this window's liveness (file mtime) and last-focused time in the shared coordination dir.
+function writeWindowState() {
+  try {
+    fs.mkdirSync(COORD_DIR, { recursive: true });
+    const f = path.join(COORD_DIR, `${WIN_ID}.json`);
+    let focusedAt = 0;
+    try {
+      focusedAt = JSON.parse(fs.readFileSync(f, 'utf8')).focusedAt || 0;
+    } catch {}
+    // A currently-focused window stamps "now" so it stays the leader.
+    if (vscode.window.state && vscode.window.state.focused) focusedAt = Date.now();
+    fs.writeFileSync(f, JSON.stringify({ pid: Number(WIN_ID), focusedAt }));
+  } catch (e) {
+    log(`writeWindowState failed: ${e.message}`);
+  }
+}
+
+function removeWindowState() {
+  try {
+    fs.unlinkSync(path.join(COORD_DIR, `${WIN_ID}.json`));
+  } catch {}
+}
+
+// True if this window is the most-recently-focused live window running watch mode.
+// Deterministic tie-break by pid so every window independently agrees on a single leader.
+function isLeaderWindow() {
+  try {
+    const now = Date.now();
+    let bestPid = -1;
+    let bestFocus = -1;
+    for (const name of fs.readdirSync(COORD_DIR)) {
+      if (!name.endsWith('.json')) continue;
+      const full = path.join(COORD_DIR, name);
+      let st;
+      try {
+        st = fs.statSync(full);
+      } catch {
+        continue;
+      }
+      if (now - st.mtimeMs > WINDOW_TTL_MS) continue; // stale = window closed/crashed
+      let data;
+      try {
+        data = JSON.parse(fs.readFileSync(full, 'utf8'));
+      } catch {
+        continue;
+      }
+      const pid = Number(data.pid);
+      const fa = Number(data.focusedAt) || 0;
+      if (fa > bestFocus || (fa === bestFocus && pid > bestPid)) {
+        bestFocus = fa;
+        bestPid = pid;
+      }
+    }
+    return bestPid === -1 || bestPid === Number(WIN_ID);
+  } catch {
+    return true; // coordination unavailable -> assume single window, inject
+  }
+}
+
 function startWatch() {
   if (watcher) return;
   const override = expandHome((cfg().get('screenshotDirectory') || '').trim());
@@ -195,11 +266,20 @@ function startWatch() {
         } catch {}
         if (!ready) return;
         injected.add(filename);
+        if (!isLeaderWindow()) {
+          log(`watch detected ${filename}; another window is the active target, skipping`);
+          return;
+        }
         log(`watch detected: ${full}`);
         injectPath(full, { focus: false });
       }, 350);
     });
     watchEnabled = true;
+    // Start multi-window coordination: heartbeat + focus tracking so only one window injects.
+    writeWindowState();
+    focusDisposable = vscode.window.onDidChangeWindowState(() => writeWindowState());
+    heartbeatTimer = setInterval(writeWindowState, 5000);
+    if (heartbeatTimer.unref) heartbeatTimer.unref();
     log(`watching screenshot folder: ${watchDir} (prefix "${prefix}")`);
   } catch (e) {
     watchEnabled = false;
@@ -213,6 +293,15 @@ function stopWatch() {
     watcher.close();
     watcher = null;
   }
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+  if (focusDisposable) {
+    focusDisposable.dispose();
+    focusDisposable = null;
+  }
+  removeWindowState();
   watchEnabled = false;
   injected.clear();
   log('watch stopped');

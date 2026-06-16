@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- **Multi-window fix:** with several VS Code windows open, a screenshot used to be injected into every window's terminal. Now windows coordinate and only the most-recently-focused one injects each screenshot.
+
 ## 0.1.0
 
 Initial release.

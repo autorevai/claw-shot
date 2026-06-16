@@ -2,7 +2,7 @@
   "name": "claw-shot",
   "displayName": "Claw Shot",
   "description": "Screenshots straight into Claude Code. In-app capture shortcuts plus a watch mode that auto-injects native Cmd+Shift+3/4 screenshots from any app. No drag-drop.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "chrisdiyanni",
   "license": "MIT",
   "engines": {
