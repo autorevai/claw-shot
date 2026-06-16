@@ -61,6 +61,16 @@ Reload VS Code (`Cmd+Shift+P` → "Reload Window"). Grant **Screen Recording** p
 | `clawShot.keepFiles` | `false` | Keep in-app capture files (>24h old are pruned otherwise). Never touches your native screenshots. |
 | `clawShot.playSound` | `true` | Shutter sound on in-app captures. |
 
+## Privacy & security
+
+Claw Shot is built to send nothing anywhere:
+
+- **No network calls, no telemetry, no analytics.** Nothing phones home. The code makes zero HTTP requests.
+- **No dependencies.** Pure VS Code API + Node stdlib. ~200 lines, auditable in minutes.
+- **Local-only actions:** runs `screencapture`, reads your macOS screenshot folder location (`defaults read`, read-only), watches that folder, and types the screenshot's file path into your terminal. It never deletes or uploads your screenshots, and only prunes its *own* temp captures (older than 24h).
+
+**One thing to know about the workflow:** when you submit a screenshot to Claude Code, the image is uploaded to Anthropic so Claude can see it (this is true of any screenshot you give Claude, including drag-drop). Watch mode only *inserts the file path* into your prompt; it does not submit. **You press Enter.** So if a screenshot with a password, API key, or customer data lands in your prompt, delete the path before submitting. Turn watch mode off (`Cmd+Option+0`) when you're capturing sensitive screens for other purposes.
+
 ## How it works
 
 Claw Shot inserts the screenshot's **file path** into the terminal via `terminal.sendText`. Claude Code reads that path as an image. This is deterministic, unlike auto-pasting raw clipboard image bytes (which a VS Code extension can't reliably do). Watch mode uses `fs.watch` on the macOS screenshot folder; in-app capture shells out to `screencapture`.
