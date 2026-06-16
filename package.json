@@ -23,6 +23,11 @@
     "type": "git",
     "url": "https://github.com/autorevai/claw-shot"
   },
+  "homepage": "https://github.com/autorevai/claw-shot#readme",
+  "bugs": {
+    "url": "https://github.com/autorevai/claw-shot/issues"
+  },
+  "icon": "icon.png",
   "activationEvents": [
     "onStartupFinished"
   ],
